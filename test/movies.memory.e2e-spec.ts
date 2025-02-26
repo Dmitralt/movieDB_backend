@@ -12,7 +12,6 @@ describe('MoviesController (In-Memory e2e)', () => {
     let dbConnection: Connection;
 
     beforeAll(async () => {
-        // Запускаем in-memory MongoDB
         mongod = await MongoMemoryServer.create();
         const mongoUri = mongod.getUri();
 

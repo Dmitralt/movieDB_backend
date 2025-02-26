@@ -51,7 +51,7 @@ describe('MoviesService', () => {
                 MoviesService,
                 {
                     provide: MoviesRepository,
-                    useValue: mockMoviesRepository, // Используем мок репозитория
+                    useValue: mockMoviesRepository,
                 },
             ],
         }).compile();

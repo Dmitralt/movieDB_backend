@@ -15,14 +15,14 @@ export class MoviesRepository {
     }
 
     async findById(id: string): Promise<Movie> {
-        if (!this.isValidObjectId(id)) { // Проверяем ID внутри репозитория!
+        if (!this.isValidObjectId(id)) {
             throw new BadRequestException('Invalid ID format');
         }
         return this.movieModel.findById(id).exec();
     }
 
     private isValidObjectId(id: string): boolean {
-        return id.match(/^[0-9a-fA-F]{24}$/) !== null; // Простая проверка без mongoose
+        return id.match(/^[0-9a-fA-F]{24}$/) !== null;
     }
 
     async searchMovies(query: string, skip: number, limit: number) {
