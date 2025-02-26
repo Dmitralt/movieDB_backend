@@ -1,9 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MoviesService } from './movies.service';
+import { MoviesRepository } from './movies.repository';
 import { getModelToken } from '@nestjs/mongoose';
 import { Movie } from './schemas/movie.schema';
 import { Model } from 'mongoose';
 import mongoose from 'mongoose';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+
 
 const mockMovie = {
     _id: '67b86d0d9db3c2c71656fd10',
@@ -30,38 +33,34 @@ const mockMovie = {
     __v: 0
 };
 
+const mockMoviesRepository = {
+    findAll: jest.fn().mockResolvedValue({ data: [mockMovie], total: 1, page: 1, limit: 10 }),
+    findById: jest.fn().mockImplementation((id) =>
+        id === mockMovie._id ? Promise.resolve(mockMovie) : Promise.resolve(null)
+    ),
+    searchMovies: jest.fn().mockResolvedValue({ data: [mockMovie], total: 1, page: 1, limit: 10 }),
+};
+let moviesRepository: jest.Mocked<MoviesRepository>;
+
 describe('MoviesService', () => {
     let service: MoviesService;
-    let model: Model<Movie>;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 MoviesService,
                 {
-                    provide: getModelToken(Movie.name),
-                    useValue: {
-                        find: jest.fn().mockImplementation(() => ({
-                            skip: jest.fn().mockReturnThis(),
-                            limit: jest.fn().mockReturnThis(),
-                            exec: jest.fn().mockResolvedValue([mockMovie]),
-                        })),
-                        findById: jest.fn().mockImplementation((id) => ({
-                            exec: jest.fn().mockResolvedValue(id === mockMovie._id ? mockMovie : null),
-                        })),
-                        countDocuments: jest.fn().mockResolvedValue(1),
-                        create: jest.fn().mockResolvedValue(mockMovie),
-                        findOne: jest.fn().mockImplementation(() => ({
-                            exec: jest.fn().mockResolvedValue(mockMovie),
-                        })),
-                    },
+                    provide: MoviesRepository,
+                    useValue: mockMoviesRepository, // Используем мок репозитория
                 },
             ],
         }).compile();
 
         service = module.get<MoviesService>(MoviesService);
-        model = module.get<Model<Movie>>(getModelToken(Movie.name));
+        moviesRepository = module.get<MoviesRepository>(MoviesRepository) as jest.Mocked<MoviesRepository>;
     });
+
+
 
     it('must be determined', () => {
         expect(service).toBeDefined();
@@ -77,48 +76,41 @@ describe('MoviesService', () => {
             limit: 10,
         });
 
-        expect(model.find).toHaveBeenCalled();
-        expect(model.countDocuments).toHaveBeenCalled();
+        expect(mockMoviesRepository.findAll).toHaveBeenCalled();
     });
 
     it('should find movie by ID', async () => {
-        jest.spyOn(model, 'findById').mockReturnValue({
-            exec: jest.fn().mockResolvedValue(mockMovie),
-        } as any);
-
         const result = await service.findById(mockMovie._id);
 
         expect(result).toEqual(mockMovie);
-        expect(model.findById).toHaveBeenCalledWith(new mongoose.Types.ObjectId(mockMovie._id));
+        expect(mockMoviesRepository.findById).toHaveBeenCalledWith(mockMovie._id);
+    });
 
+    it('should throw a BadRequestException if the ID is invalid', async () => {
+        await expect(service.findById('123')).rejects.toThrow(BadRequestException);
+        await expect(service.findById('123')).rejects.toThrow('Invalid ID format');
+    });
+
+    it('should throw a NotFoundException if the movie does not exist', async () => {
+        jest.spyOn(moviesRepository, 'findById').mockResolvedValue(null);
+
+        await expect(service.findById(new mongoose.Types.ObjectId().toHexString()))
+            .rejects.toThrow(NotFoundException);
+        await expect(service.findById(new mongoose.Types.ObjectId().toHexString()))
+            .rejects.toThrow('Movie not found');
     });
 
 
-
     it('should throw an error if the ID is invalid', async () => {
-        jest.spyOn(model, 'findById').mockReturnValue({
-            exec: jest.fn().mockResolvedValue(mockMovie),
-        } as any);
-
-
         await expect(service.findById('123')).rejects.toThrow('Invalid ID format');
     });
 
     it('must search for movie by title', async () => {
-        jest.spyOn(model, 'find').mockReturnValue({
-            skip: jest.fn().mockReturnThis(),
-            limit: jest.fn().mockReturnThis(),
-            exec: jest.fn().mockResolvedValue([mockMovie]),
-        } as any);
-
-
         const result = await service.searchMovies('Сумка');
 
         expect(result).toEqual({ data: [mockMovie], total: 1, page: 1, limit: 10 });
-        expect(model.find).toHaveBeenCalled();
+        expect(mockMoviesRepository.searchMovies).toHaveBeenCalled();
     });
-
-
 
     afterAll(async () => {
         await mongoose.connection.close();
