@@ -38,6 +38,7 @@ export class MoviesRepository {
         const data = await this.movieModel.find(searchConditions).skip(skip).limit(limit).exec();
         const total = await this.movieModel.countDocuments(searchConditions);
 
+
         return { data, total };
     }
 
