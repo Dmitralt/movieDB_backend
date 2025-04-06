@@ -43,4 +43,3 @@ export class Movie {
 }
 
 export const MovieSchema = SchemaFactory.createForClass(Movie);
-

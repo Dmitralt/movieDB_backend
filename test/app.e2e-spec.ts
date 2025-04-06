@@ -25,5 +25,4 @@ describe('AppController (e2e)', () => {
     app.close();
     jest.clearAllTimers();
   });
-
 });

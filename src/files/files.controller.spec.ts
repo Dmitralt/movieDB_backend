@@ -48,19 +48,17 @@ describe('FilesController', () => {
             pipe: jest.fn(),
         };
 
-        // Mock process.cwd
         Object.defineProperty(process, 'cwd', {
             value: jest.fn().mockReturnValue(mockBasePath),
-            writable: true
+            writable: true,
         });
     });
 
     afterEach(() => {
         jest.clearAllMocks();
-        // Restore original process.cwd
         Object.defineProperty(process, 'cwd', {
             value: jest.requireActual('process').cwd,
-            writable: true
+            writable: true,
         });
     });
 
@@ -71,15 +69,21 @@ describe('FilesController', () => {
 
             await controller.getPoster('test.jpg', mockResponse as Response);
 
-            expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'image/jpeg');
+            expect(mockResponse.setHeader).toHaveBeenCalledWith(
+                'Content-Type',
+                'image/jpeg',
+            );
             expect(mockResponse.send).toHaveBeenCalledWith(mockBuffer);
         });
 
         it('should handle NotFoundException', async () => {
-            jest.spyOn(service, 'getPoster').mockRejectedValue(new NotFoundException());
+            jest
+                .spyOn(service, 'getPoster')
+                .mockRejectedValue(new NotFoundException());
 
-            await expect(controller.getPoster('nonexistent.jpg', mockResponse as Response))
-                .rejects.toThrow(NotFoundException);
+            await expect(
+                controller.getPoster('nonexistent.jpg', mockResponse as Response),
+            ).rejects.toThrow(NotFoundException);
         });
     });
 
@@ -90,15 +94,21 @@ describe('FilesController', () => {
 
             await controller.getStill('test.jpg', mockResponse as Response);
 
-            expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'image/jpeg');
+            expect(mockResponse.setHeader).toHaveBeenCalledWith(
+                'Content-Type',
+                'image/jpeg',
+            );
             expect(mockResponse.send).toHaveBeenCalledWith(mockBuffer);
         });
 
         it('should handle NotFoundException', async () => {
-            jest.spyOn(service, 'getStill').mockRejectedValue(new NotFoundException());
+            jest
+                .spyOn(service, 'getStill')
+                .mockRejectedValue(new NotFoundException());
 
-            await expect(controller.getStill('nonexistent.jpg', mockResponse as Response))
-                .rejects.toThrow(NotFoundException);
+            await expect(
+                controller.getStill('nonexistent.jpg', mockResponse as Response),
+            ).rejects.toThrow(NotFoundException);
         });
     });
 
@@ -117,7 +127,11 @@ describe('FilesController', () => {
         it('should stream video file without range', async () => {
             (fs.existsSync as jest.Mock).mockReturnValue(true);
 
-            await controller.getVideo('test.mp4', mockResponse as Response, undefined);
+            await controller.getVideo(
+                'test.mp4',
+                mockResponse as Response,
+                undefined,
+            );
 
             expect(mockResponse.writeHead).toHaveBeenCalledWith(200, {
                 'Content-Length': 1000,
@@ -142,16 +156,22 @@ describe('FilesController', () => {
         it('should handle NotFoundException for non-existent video', async () => {
             (fs.existsSync as jest.Mock).mockReturnValue(false);
 
-            await expect(controller.getVideo('nonexistent.mp4', mockResponse as Response, undefined))
-                .rejects.toThrow(NotFoundException);
+            await expect(
+                controller.getVideo(
+                    'nonexistent.mp4',
+                    mockResponse as Response,
+                    undefined,
+                ),
+            ).rejects.toThrow(NotFoundException);
         });
 
         it('should handle NotFoundException for invalid range', async () => {
             (fs.existsSync as jest.Mock).mockReturnValue(true);
-            const range = 'bytes=2000-3000'; // Range beyond file size
+            const range = 'bytes=2000-3000';
 
-            await expect(controller.getVideo('test.mp4', mockResponse as Response, range))
-                .rejects.toThrow(NotFoundException);
+            await expect(
+                controller.getVideo('test.mp4', mockResponse as Response, range),
+            ).rejects.toThrow(NotFoundException);
         });
 
         it('should handle file system errors', async () => {
@@ -160,8 +180,9 @@ describe('FilesController', () => {
                 throw new Error('EACCES');
             });
 
-            await expect(controller.getVideo('test.mp4', mockResponse as Response, undefined))
-                .rejects.toThrow(ForbiddenException);
+            await expect(
+                controller.getVideo('test.mp4', mockResponse as Response, undefined),
+            ).rejects.toThrow(ForbiddenException);
         });
     });
-}); 
+});

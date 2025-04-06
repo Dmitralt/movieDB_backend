@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Res, NotFoundException, Headers, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Param,
+    Res,
+    NotFoundException,
+    Headers,
+    ForbiddenException,
+    InternalServerErrorException,
+} from '@nestjs/common';
 import { FilesService } from './files.service';
 import { Response } from 'express';
 import * as fs from 'fs';
@@ -50,10 +59,15 @@ export class FilesController {
     async getVideo(
         @Param('filename') filename: string,
         @Res() res: Response,
-        @Headers('range') range: string
+        @Headers('range') range: string,
     ) {
         try {
-            const filePath = path.join(process.cwd(), 'data_storage', 'videos', filename);
+            const filePath = path.join(
+                process.cwd(),
+                'data_storage',
+                'videos',
+                filename,
+            );
 
             if (!fs.existsSync(filePath)) {
                 throw new NotFoundException('Video not found');
@@ -63,7 +77,6 @@ export class FilesController {
             const fileSize = stat.size;
 
             if (range) {
-                // Handle range request for streaming
                 const parts = range.replace(/bytes=/, '').split('-');
                 const start = parseInt(parts[0], 10);
                 const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
@@ -72,7 +85,7 @@ export class FilesController {
                     throw new NotFoundException('Range not satisfiable');
                 }
 
-                const chunksize = (end - start) + 1;
+                const chunksize = end - start + 1;
                 const file = fs.createReadStream(filePath, { start, end });
 
                 const head = {
@@ -85,7 +98,6 @@ export class FilesController {
                 res.writeHead(206, head);
                 file.pipe(res);
             } else {
-                // Handle full file request
                 const head = {
                     'Content-Length': fileSize,
                     'Content-Type': 'video/mp4',
@@ -101,4 +113,4 @@ export class FilesController {
             this.handleFileError(error as Error);
         }
     }
-} 
+}

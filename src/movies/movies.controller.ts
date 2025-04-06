@@ -1,86 +1,66 @@
-import { Controller, Get, Post, Put, Patch, Delete, Query, Param, Body, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { MoviesService } from './movies.service';
-import { Movie } from './schemas/movie.schema';
-import { NotFoundException } from '@nestjs/common';
+import { CreateMovieDto } from './dto/create-movie.dto';
+import { UpdateMovieDto } from './dto/update-movie.dto';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('movies')
+@UseGuards(ThrottlerGuard)
 export class MoviesController {
-    constructor(private readonly moviesService: MoviesService) { }
+  constructor(private readonly moviesService: MoviesService) { }
 
-    @Get('search')
-    async search(
-        @Query('query') query: string,
-        @Query('page') page: number = 1,
-        @Query('limit') limit: number = 10
-    ): Promise<{ data: Movie[]; total: number; page: number; limit: number }> {
-        if (!query) {
-            throw new BadRequestException('Search query cannot be empty');
-        }
-        return this.moviesService.searchMovies(query, Number(page), Number(limit));
-    }
+  @Post()
+  create(@Body() createMovieDto: CreateMovieDto) {
+    return this.moviesService.create(createMovieDto);
+  }
 
-    @Get()
-    async getAll(
-        @Query('page') page: number = 1,
-        @Query('limit') limit: number = 10
-    ) {
-        return this.moviesService.findAll(page, limit);
-    }
+  @Get()
+  findAll(
+    @Query('skip') skip: string = '0',
+    @Query('limit') limit: string = '10',
+  ) {
+    return this.moviesService.findAll(parseInt(skip, 10), parseInt(limit, 10));
+  }
 
-    @Get(':id')
-    async getById(@Param('id') id: string): Promise<Movie> {
-        const movie = await this.moviesService.findById(id);
+  @Get('search')
+  search(
+    @Query('query') query: string,
+    @Query('skip') skip: string = '0',
+    @Query('limit') limit: string = '10',
+  ) {
+    return this.moviesService.searchMovies(
+      query,
+      parseInt(skip, 10),
+      parseInt(limit, 10),
+    );
+  }
 
-        if (!movie) {
-            throw new NotFoundException(`Movie with ID ${id} not found`);
-        }
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.moviesService.findById(id);
+  }
 
-        return movie;
-    }
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateMovieDto: UpdateMovieDto,
+    @Query('version') version: string,
+  ) {
+    return this.moviesService.update(id, updateMovieDto, parseInt(version, 10));
+  }
 
-    @Post()
-    async create(@Body() movieData: Partial<Movie>): Promise<Movie> {
-        return this.moviesService.create(movieData);
-    }
-
-    @Put(':id')
-    async updateMovie(
-        @Param('id') id: string,
-        @Body() movieData: Partial<Movie>,
-        @Body('__v') clientVersion: number
-    ): Promise<Movie> {
-        if (clientVersion === undefined) {
-            throw new BadRequestException('Missing document version (__v)');
-        }
-        delete movieData.__v;
-
-        const updatedMovie = await this.moviesService.update(id, movieData, clientVersion);
-        return updatedMovie;
-    }
-
-    @Patch(':id')
-    async patchMovie(
-        @Param('id') id: string,
-        @Body() updates: Partial<Movie>,
-        @Body('__v') clientVersion: number
-    ): Promise<Movie> {
-        if (clientVersion === undefined) {
-            throw new BadRequestException('Missing document version (__v)');
-        }
-
-        return this.moviesService.partialUpdate(id, updates, clientVersion);
-    }
-
-    @Delete(':id')
-    async deleteMovie(
-        @Param('id') id: string,
-        @Body('__v') clientVersion: number
-    ): Promise<{ deletedCount: number }> {
-        if (clientVersion === undefined) {
-            throw new BadRequestException('Missing document version (__v)');
-        }
-        return this.moviesService.delete(id, clientVersion);
-    }
-
-
+  @Delete(':id')
+  remove(@Param('id') id: string, @Query('version') version: string) {
+    return this.moviesService.remove(id, parseInt(version, 10));
+  }
 }
