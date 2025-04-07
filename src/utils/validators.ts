@@ -66,9 +66,9 @@ export function SanitizeArray() {
         value = newVal.map((item) =>
           typeof item === 'string'
             ? sanitizeHtml(item, {
-                allowedTags: [],
-                allowedAttributes: {},
-              })
+              allowedTags: [],
+              allowedAttributes: {},
+            })
             : item,
         );
       } else {

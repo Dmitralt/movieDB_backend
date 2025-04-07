@@ -13,11 +13,18 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Налаштування безпеки
-  app.use(helmet());
-  app.use(helmet.contentSecurityPolicy());
-  app.use(helmet.crossOriginEmbedderPolicy());
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false
+  }));
+  app.use(helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      mediaSrc: ["'self'", "data:", "blob:"],
+    },
+  }));
   app.use(helmet.crossOriginOpenerPolicy());
-  app.use(helmet.crossOriginResourcePolicy());
   app.use(helmet.dnsPrefetchControl());
   app.use(helmet.frameguard());
   app.use(helmet.hidePoweredBy());
@@ -35,7 +42,7 @@ async function bootstrap() {
 
   //  CORS
   app.enableCors({
-    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:3000',
+    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:3001',
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [

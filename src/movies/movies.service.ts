@@ -10,7 +10,9 @@ import { MoviesRepository } from './movies.repository';
 
 @Injectable()
 export class MoviesService {
-  constructor(private readonly moviesRepository: MoviesRepository) {}
+  private readonly MAX_LIMIT = 100;
+
+  constructor(private readonly moviesRepository: MoviesRepository) { }
 
   async create(createMovieDto: CreateMovieDto): Promise<Movie> {
     return this.moviesRepository.create(createMovieDto);
@@ -20,7 +22,9 @@ export class MoviesService {
     skip: number = 0,
     limit: number = 10,
   ): Promise<{ data: Movie[]; total: number }> {
-    return this.moviesRepository.findAll(skip, limit);
+    const validatedSkip = Math.max(0, skip);
+    const validatedLimit = Math.min(Math.max(1, limit), this.MAX_LIMIT);
+    return this.moviesRepository.findAll(validatedSkip, validatedLimit);
   }
 
   async searchMovies(
@@ -28,7 +32,9 @@ export class MoviesService {
     skip: number = 0,
     limit: number = 10,
   ): Promise<{ data: Movie[]; total: number }> {
-    return this.moviesRepository.searchMovies(query, skip, limit);
+    const validatedSkip = Math.max(0, skip);
+    const validatedLimit = Math.min(Math.max(1, limit), this.MAX_LIMIT);
+    return this.moviesRepository.searchMovies(query, validatedSkip, validatedLimit);
   }
 
   async findById(id: string): Promise<Movie> {
@@ -51,10 +57,16 @@ export class MoviesService {
     updateMovieDto: UpdateMovieDto,
     version: number,
   ): Promise<Movie> {
+    if (!this.isValidObjectId(id)) {
+      throw new BadRequestException('Invalid ID format');
+    }
     return this.moviesRepository.update(id, updateMovieDto, version);
   }
 
   async remove(id: string, version: number): Promise<{ deletedCount: number }> {
+    if (!this.isValidObjectId(id)) {
+      throw new BadRequestException('Invalid ID format');
+    }
     return this.moviesRepository.delete(id, version);
   }
 }

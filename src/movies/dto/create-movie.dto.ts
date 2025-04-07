@@ -33,6 +33,16 @@ export class CreateMovieDto {
   @SanitizeHtml()
   country?: string;
 
+  @IsString()
+  @IsOptional()
+  @SanitizeHtml()
+  language?: string;
+
+  @IsString()
+  @IsOptional()
+  @SanitizeHtml()
+  production_company?: string;
+
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
@@ -44,6 +54,12 @@ export class CreateMovieDto {
   @IsOptional()
   @SanitizeArray()
   directors?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  @SanitizeArray()
+  screenwriters?: string[];
 
   @IsArray()
   @IsString({ each: true })
@@ -65,4 +81,8 @@ export class CreateMovieDto {
   @Max(10)
   @IsOptional()
   rating?: number;
+
+  @IsNumber()
+  @IsOptional()
+  runtime?: number;
 }
