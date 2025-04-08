@@ -25,24 +25,49 @@ export class MoviesController {
   }
 
   @Get()
-  findAll(
-    @Query('skip') skip: string = '0',
+  async findAll(
+    @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
   ) {
-    return this.moviesService.findAll(parseInt(skip, 10), parseInt(limit, 10));
+    const pageNum = Math.max(1, parseInt(page, 10) || 1); // Номер страницы
+    const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 10)); // Лимит элементов
+
+    const offset = (pageNum - 1) * limitNum; // Смещение для правильного диапазона
+
+    const result = await this.moviesService.findAll(offset, limitNum); // Используем offset и limit
+
+    return {
+      data: result.data,
+      total: result.total,
+      page: pageNum,
+      totalPages: Math.ceil(result.total / limitNum),
+      limit: limitNum,
+    };
   }
 
+
   @Get('search')
-  search(
+  async search(
     @Query('query') query: string,
-    @Query('skip') skip: string = '0',
+    @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
   ) {
-    return this.moviesService.searchMovies(
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 10));
+
+    const result = await this.moviesService.searchMovies(
       query,
-      parseInt(skip, 10),
-      parseInt(limit, 10),
+      pageNum,
+      limitNum
     );
+
+    return {
+      data: result.data,
+      total: result.total,
+      page: pageNum,
+      totalPages: Math.ceil(result.total / limitNum),
+      limit: limitNum
+    };
   }
 
   @Get(':id')

@@ -42,8 +42,12 @@ async function bootstrap() {
 
   //  CORS
   app.enableCors({
-    origin: process.env.FRONTEND_ORIGIN || 'http://localhost:3001',
-    credentials: true,
+    origin: [
+      'http://localhost:3001',
+      'http://192.168.0.196:3001',
+      /^http:\/\/192\.168\.0\.\d{1,3}:3001$/  // дозволяємо 192.168.0.*
+    ],
+    credentials: true, //кукі, авторизація, сертифікати
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -60,7 +64,7 @@ async function bootstrap() {
       'Content-Type',
       'X-Total-Count',
     ],
-    maxAge: 86400, // 24 години
+    maxAge: 86400, // 24 години для зберігання специфічних данних
     preflightContinue: false,
     optionsSuccessStatus: 204,
   });
@@ -72,7 +76,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: {
-        enableImplicitConversion: true,
+        enableImplicitConversion: true, //конвертація типів
       },
       validationError: {
         target: false,
